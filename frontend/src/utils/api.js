@@ -1,5 +1,8 @@
 import axios from 'axios'
 
+const baseURL = import.meta.env.VITE_API_URL || ''
+axios.defaults.baseURL = baseURL
+
 export const api = {
   login: (d) => axios.post('/api/auth/login', d),
   getProducts: () => axios.get('/api/products'),
