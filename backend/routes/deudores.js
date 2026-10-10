@@ -4,7 +4,7 @@ const pool = require('../config/db');
 const { authMiddleware, adminOnly } = require('../middleware/auth');
 
 router.get('/', authMiddleware, adminOnly, async (req, res) => {
-  const { negocio, activo } = req.query;
+  const { negocio, activo, vendedor } = req.query;
   let query = `
     SELECT d.*, u.username AS vendedor
     FROM deudores d
@@ -14,6 +14,7 @@ router.get('/', authMiddleware, adminOnly, async (req, res) => {
   const params = [];
   if (negocio) { params.push(`%${negocio}%`); query += ` AND d.negocio ILIKE $${params.length}`; }
   if (activo !== undefined && activo !== '') { params.push(activo === 'true'); query += ` AND d.activo = $${params.length}`; }
+  if (vendedor) { params.push(vendedor); query += ` AND d.distribuidorId = $${params.length}`; }
   query += ' ORDER BY d.fecha DESC';
   try {
     const { rows } = await pool.query(query, params);

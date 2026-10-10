@@ -7,6 +7,8 @@ export default function CarguesPendientes() {
   const [loading, setLoading] = useState(true)
   const [cantidades, setCantidades] = useState({})
   const [solicitudesNegativas, setSolicitudesNegativas] = useState([])
+  const [filtroVendedor, setFiltroVendedor] = useState('')
+  const [vendedores, setVendedores] = useState([])
 
 
   const cargar = () => {
@@ -14,11 +16,13 @@ export default function CarguesPendientes() {
     Promise.all([
         api.getCarguesPendientes(),
         api.getSolicitudesCero(),
-        api.getSolicitudesNegativas()
-    ]).then(([c, s, n]) => {
+        api.getSolicitudesNegativas(),
+        api.getVendedores()
+    ]).then(([c, s, n, v]) => {
         setCargues(c.data)
         setSolicitudesCero(s.data)
         setSolicitudesNegativas(n.data)
+        setVendedores(v.data)
         const init = {}
         c.data.forEach(c => {
         init[c.cargueid] = Math.min(c.cantidad_solicitada, c.stock)
@@ -136,6 +140,21 @@ export default function CarguesPendientes() {
       )}
 
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Cargues Pendientes</h1>
+        <div className="card mb-6 flex gap-4 items-end">
+            <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Filtrar por vendedor</label>
+                <select
+                className="input"
+                value={filtroVendedor}
+                onChange={e => setFiltroVendedor(e.target.value)}
+                >
+                <option value="">Todos los vendedores</option>
+                {vendedores.map(v => (
+                    <option key={v.userid} value={v.username}>{v.username}</option>
+                ))}
+                </select>
+            </div>
+        </div>
       {cargues.length === 0 ? (
         <div className="card text-center text-gray-400 py-12">No hay cargues pendientes</div>
       ) : (
@@ -152,7 +171,9 @@ export default function CarguesPendientes() {
               </tr>
             </thead>
             <tbody>
-              {cargues.map(c => (
+              {cargues
+                .filter(c => !filtroVendedor || c.vendedor === filtroVendedor)
+                .map(c => (
                 <tr key={c.cargueid} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="py-3 px-4 font-medium">{c.vendedor}</td>
                   <td className="py-3 px-4">{c.productname}</td>

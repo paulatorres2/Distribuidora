@@ -5,6 +5,8 @@ export default function DeudoresAdmin() {
   const [deudores, setDeudores] = useState([])
   const [filtro, setFiltro] = useState({ negocio: '', activo: 'true' })
   const [loading, setLoading] = useState(true)
+  const [vendedores, setVendedores] = useState([])
+  const [filtro, setFiltro] = useState({ negocio: '', activo: 'true', vendedor: '' })
 
   const cargar = () => {
     api.getDeudores(filtro)
@@ -12,7 +14,9 @@ export default function DeudoresAdmin() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { cargar() }, [filtro])
+  useEffect(() => {
+    api.getVendedores().then(r => setVendedores(r.data))
+  }, [])
 
   const marcarPagado = async (id) => {
     if (!confirm('¿Marcar este deudor como pagado?')) return
@@ -23,6 +27,20 @@ export default function DeudoresAdmin() {
   return (
     <div className="p-8 space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Deudores</h1>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Vendedor</label>
+        <select
+            className="input"
+            value={filtro.vendedor}
+            onChange={e => setFiltro({ ...filtro, vendedor: e.target.value })}
+        >
+            <option value="">Todos</option>
+            {vendedores.map(v => (
+            <option key={v.userid} value={v.userid}>{v.username}</option>
+            ))}
+        </select>
+      </div>
 
       <div className="card flex gap-4 items-end">
         <div className="flex-1">

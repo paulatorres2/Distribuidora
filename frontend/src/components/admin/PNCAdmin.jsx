@@ -6,14 +6,18 @@ export default function PNCAdmin() {
   const [resumen, setResumen] = useState([])
   const [loading, setLoading] = useState(true)
   const now = new Date()
+  const [filtroVendedor, setFiltroVendedor] = useState('')
+  const [vendedores, setVendedores] = useState([])
 
   const cargar = () => {
     Promise.all([
-      api.getPNCPendientes(),
-      api.getPNCMes(now.getFullYear(), now.getMonth() + 1)
-    ]).then(([p, r]) => {
-      setPncs(p.data)
-      setResumen(r.data)
+        api.getPNCPendientes(),
+        api.getPNCMes(now.getFullYear(), now.getMonth() + 1),
+        api.getVendedores()
+    ]).then(([p, r, v]) => {
+        setPncs(p.data)
+        setResumen(r.data)
+        setVendedores(v.data)
     }).finally(() => setLoading(false))
   }
 
@@ -30,6 +34,21 @@ export default function PNCAdmin() {
     <div className="p-8 space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">PNC - Productos No Conformes</h1>
 
+      <div className="card flex gap-4 items-end">
+        <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Filtrar por vendedor</label>
+            <select
+            className="input"
+            value={filtroVendedor}
+            onChange={e => setFiltroVendedor(e.target.value)}
+            >
+            <option value="">Todos los vendedores</option>
+            {vendedores.map(v => (
+                <option key={v.userid} value={v.username}>{v.username}</option>
+            ))}
+            </select>
+        </div>
+      </div>
       <div className="card">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Pendientes de validación</h2>
         {pncs.length === 0 ? (
@@ -46,7 +65,9 @@ export default function PNCAdmin() {
               </tr>
             </thead>
             <tbody>
-              {pncs.map(p => (
+              {pncs
+                .filter(p => !filtroVendedor || p.vendedor === filtroVendedor)
+                .map(p => (
                 <tr key={p.pncid} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="py-3 px-4">{p.vendedor}</td>
                   <td className="py-3 px-4">{p.productname}</td>
