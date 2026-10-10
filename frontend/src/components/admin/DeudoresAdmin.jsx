@@ -3,7 +3,7 @@ import { api, formatCOP } from '../../utils/api'
 
 export default function DeudoresAdmin() {
   const [deudores, setDeudores] = useState([])
-  const [filtro, setFiltro] = useState({ negocio: '', activo: 'true' })
+  //const [filtro, setFiltro] = useState({ negocio: '', activo: 'true' })
   const [loading, setLoading] = useState(true)
   const [vendedores, setVendedores] = useState([])
   const [filtro, setFiltro] = useState({ negocio: '', activo: 'true', vendedor: '' })
