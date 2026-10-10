@@ -23,6 +23,12 @@ router.get('/admin', authMiddleware, adminOnly, async (req, res) => {
         AND DATE_TRUNC('month', p.created_at) = DATE_TRUNC('month', CURRENT_DATE)
         `);
 
+        const { rows: activos_clientes } = await pool.query(`
+        SELECT COALESCE(SUM(total_neto),0) AS total
+        FROM cargue_cliente
+        WHERE DATE_TRUNC('month', fecha) = DATE_TRUNC('month', CURRENT_DATE)
+`);
+
     const { rows: descuentos_mes } = await pool.query(`
         SELECT COALESCE(SUM(p.monto),0) AS total
         FROM pagos p JOIN tipoEstado te ON p.tipoEstadoId=te.tipoEstadoId
@@ -46,36 +52,41 @@ router.get('/admin', authMiddleware, adminOnly, async (req, res) => {
     `);
 
     const { rows: evolucion } = await pool.query(`
-      WITH meses AS (
-        SELECT generate_series(
-        DATE_TRUNC('month', CURRENT_DATE - INTERVAL '5 months'),
-        DATE_TRUNC('month', CURRENT_DATE),
-        '1 month'::interval
-        ) AS mes
-      ),
-      activos_m AS (
-        SELECT DATE_TRUNC('month', created_at) AS mes, SUM(monto) AS total
-        FROM pagos p JOIN tipoEstado te ON p.tipoEstadoId=te.tipoEstadoId
-        WHERE te.especificacion='aceptado' AND p.tipoPagoId != 6 GROUP BY 1
-      ),
-      descuentos_m AS (
-        SELECT DATE_TRUNC('month', created_at) AS mes, SUM(monto) AS total
-        FROM pagos p JOIN tipoEstado te ON p.tipoEstadoId=te.tipoEstadoId
-        WHERE te.especificacion='aceptado' AND p.tipoPagoId = 6 GROUP BY 1
-      ),
-      pasivos_m AS (
-        SELECT DATE_TRUNC('month', fecha) AS mes, SUM(monto) AS total
-        FROM pasivos GROUP BY 1
-      )
-      SELECT TO_CHAR(m.mes,'YYYY-MM') AS mes,
-            COALESCE(a.total,0) AS activos,
-            COALESCE(d.total,0) AS descuentos,
-            COALESCE(p.total,0) AS pasivos
-      FROM meses m
-      LEFT JOIN activos_m a ON m.mes=a.mes
-      LEFT JOIN descuentos_m d ON m.mes=d.mes
-      LEFT JOIN pasivos_m p ON m.mes=p.mes
-      ORDER BY m.mes
+        WITH meses AS (
+            SELECT generate_series(
+            DATE_TRUNC('month', CURRENT_DATE - INTERVAL '5 months'),
+            DATE_TRUNC('month', CURRENT_DATE),
+            '1 month'::interval
+            ) AS mes
+        ),
+        activos_m AS (
+            SELECT DATE_TRUNC('month', created_at) AS mes, SUM(monto) AS total
+            FROM pagos p JOIN tipoEstado te ON p.tipoEstadoId=te.tipoEstadoId
+            WHERE te.especificacion='aceptado' AND p.tipoPagoId != 6 GROUP BY 1
+        ),
+        clientes_m AS (
+            SELECT DATE_TRUNC('month', fecha) AS mes, SUM(total_neto) AS total
+            FROM cargue_cliente GROUP BY 1
+        ),
+        descuentos_m AS (
+            SELECT DATE_TRUNC('month', created_at) AS mes, SUM(monto) AS total
+            FROM pagos p JOIN tipoEstado te ON p.tipoEstadoId=te.tipoEstadoId
+            WHERE te.especificacion='aceptado' AND p.tipoPagoId = 6 GROUP BY 1
+        ),
+        pasivos_m AS (
+            SELECT DATE_TRUNC('month', fecha) AS mes, SUM(monto) AS total
+            FROM pasivos GROUP BY 1
+        )
+        SELECT TO_CHAR(m.mes,'YYYY-MM') AS mes,
+                COALESCE(a.total,0) + COALESCE(cl.total,0) AS activos,
+                COALESCE(d.total,0) AS descuentos,
+                COALESCE(p.total,0) AS pasivos
+        FROM meses m
+        LEFT JOIN activos_m a ON m.mes=a.mes
+        LEFT JOIN clientes_m cl ON m.mes=cl.mes
+        LEFT JOIN descuentos_m d ON m.mes=d.mes
+        LEFT JOIN pasivos_m p ON m.mes=p.mes
+        ORDER BY m.mes
     `);
 
     const { rows: cargues_pend } = await pool.query(
@@ -89,7 +100,7 @@ router.get('/admin', authMiddleware, adminOnly, async (req, res) => {
     res.json({
       bodega: bodega[0],
       deudores: deudores[0],
-      activos_mes: activos_mes[0].total,
+      activos_mes: Number(activos_mes[0].total) + Number(activos_clientes[0].total),
       descuentos_mes: descuentos_mes[0].total,
       pasivos_mes: pasivos_mes[0].total,
       ventas_vendedor,
