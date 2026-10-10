@@ -30,17 +30,21 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 router.get('/pendientes', authMiddleware, adminOnly, async (req, res) => {
+  const { vendedorId } = req.query;
+  let query = `
+    SELECT c.*, u.username AS vendedor, p.productname, p.price, ib.CantidadExistente AS stock
+    FROM cargue c
+    JOIN Usuarios u ON c.distribuidorId = u.UserId
+    JOIN products p ON c.productoId = p.productId
+    JOIN Inventario_Bodega ib ON p.productId = ib.productId
+    JOIN tipoEstado te ON c.estadoTipoId = te.tipoEstadoId
+    WHERE te.especificacion = 'pendiente'
+  `;
+  const params = [];
+  if (vendedorId) { params.push(vendedorId); query += ` AND c.distribuidorId = $${params.length}`; }
+  query += ' ORDER BY c.fecha DESC, u.username';
   try {
-    const { rows } = await pool.query(`
-      SELECT c.*, u.username AS vendedor, p.productname, p.price, ib.CantidadExistente AS stock
-      FROM cargue c
-      JOIN Usuarios u ON c.distribuidorId = u.UserId
-      JOIN products p ON c.productoId = p.productId
-      JOIN Inventario_Bodega ib ON p.productId = ib.productId
-      JOIN tipoEstado te ON c.estadoTipoId = te.tipoEstadoId
-      WHERE te.especificacion = 'pendiente'
-      ORDER BY c.fecha DESC, u.username
-    `);
+    const { rows } = await pool.query(query, params);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });

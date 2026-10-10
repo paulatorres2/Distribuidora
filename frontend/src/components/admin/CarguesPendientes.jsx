@@ -13,8 +13,9 @@ export default function CarguesPendientes() {
 
   const cargar = () => {
     setLoading(true)
+    const params = filtroVendedor ? { vendedorId: vendedores.find(v => v.username === filtroVendedor)?.userid } : {}
     Promise.all([
-        api.getCarguesPendientes(),
+        api.getCarguesPendientes(params),
         api.getSolicitudesCero(),
         api.getSolicitudesNegativas(),
         api.getVendedores()
@@ -33,7 +34,7 @@ export default function CarguesPendientes() {
     }).finally(() => setLoading(false))
   }
 
-  useEffect(() => { cargar() }, [])
+  useEffect(() => { cargar() }, [filtroVendedor])
 
   const aprobar = async (id) => {
     const cant = cantidades[id]
@@ -171,9 +172,7 @@ export default function CarguesPendientes() {
               </tr>
             </thead>
             <tbody>
-              {cargues
-                .filter(c => !filtroVendedor || c.vendedor === filtroVendedor)
-                .map(c => (
+              {cargues.map(c => (
                 <tr key={c.cargueid} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="py-3 px-4 font-medium">{c.vendedor}</td>
                   <td className="py-3 px-4">{c.productname}</td>
