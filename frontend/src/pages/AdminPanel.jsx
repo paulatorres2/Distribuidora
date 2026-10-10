@@ -11,6 +11,7 @@ import ProductosAdmin from '../components/admin/ProductosAdmin'
 import UsuariosAdmin from '../components/admin/UsuariosAdmin'
 import InformesAdmin from '../components/admin/InformesAdmin'
 import ComisionesAdmin from '../components/admin/ComisionesAdmin'
+import MercanciaPrestada from '../components/admin/MercanciaPrestada'
 
 const links = [
   { to: '/admin',          icon: '📊', label: 'Dashboard' },
@@ -24,6 +25,7 @@ const links = [
   { to: '/admin/usuarios', icon: '👥', label: 'Usuarios' },
   { to: '/admin/informes', icon: '📈', label: 'Informes' },
   { to: '/admin/comisiones', icon: '💵', label: 'Comisiones' },
+  { to: '/admin/prestamos', icon: '🤝', label: 'Mercancía Prestada' },
 ]
 
 export default function AdminPanel() {
@@ -42,6 +44,7 @@ export default function AdminPanel() {
         <Route path="*"         element={<Navigate to="/admin" />} />
         <Route path="informes" element={<InformesAdmin />} />
         <Route path="comisiones" element={<ComisionesAdmin />} />
+        <Route path="prestamos" element={<MercanciaPrestada />} />
       </Routes>
     </Layout>
   )

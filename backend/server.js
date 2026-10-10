@@ -18,6 +18,7 @@ app.use('/api/pasivos',     require('./routes/pasivos'));
 app.use('/api/bodega',      require('./routes/bodega'));
 app.use('/api/dashboard',   require('./routes/dashboard'));
 app.use('/api/informes', require('./routes/informes'));
+app.use('/api/prestamos', require('./routes/prestamos'));
 
 app.get('/api/ping', (req, res) => res.json({ ok: true }));
 

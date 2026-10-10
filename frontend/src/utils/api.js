@@ -54,6 +54,9 @@ export const api = {
   desactivarUsuario: (id) => axios.put(`/api/auth/desactivar/${id}`),
   activarUsuario: (id) => axios.put(`/api/auth/activar/${id}`),
   getVendedoresTodos: () => axios.get('/api/auth/vendedores-todos'),
+  getPrestamos: (params) => axios.get('/api/prestamos', { params }),
+  crearPrestamo: (d) => axios.post('/api/prestamos', d),
+  saldarPrestamo: (id) => axios.put(`/api/prestamos/${id}/saldar`),
 }
 
 export const formatCOP = (v) =>
